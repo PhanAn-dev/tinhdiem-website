@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Công cụ Tính điểm & Dự đoán điểm thi DTU</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #0b1329;
+        }
+        .custom-card {
+            background-color: #131c35;
+            border: 1px solid #1e294b;
+        }
+        .input-bg {
+            background-color: #1e294b;
+            border: 1px solid #2e3d6b;
+        }
+        .input-bg:focus {
+            border-color: #3b82f6;
+            outline: none;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.2);
+        }
+    </style>
+</head>
+<body class="text-slate-200 min-h-screen flex flex-col justify-between pb-12">
+
+    <header class="w-full py-4 px-6 border-b border-slate-800 bg-[#0b1329] flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <i class="fa-solid fa-book-open text-blue-400 text-xl"></i>
+            <span class="font-bold text-lg tracking-wide text-white">Công cụ Tính điểm</span>
+        </div>
+        <div class="text-xs text-slate-400 bg-slate-800/50 px-3 py-1.5 rounded-full border border-slate-700">
+            <span class="font-semibold text-slate-300">Phan An IT</span>
+        </div>
+    </header>
+
+    <main class="flex-grow container mx-auto max-w-4xl px-4 py-6">
+        <div class="custom-card rounded-2xl p-6 md:p-8 shadow-2xl relative overflow-hidden">
+            
+            <div class="absolute -top-24 -left-24 w-48 h-48 bg-blue-500/10 blur-3xl rounded-full"></div>
+            <div class="absolute -bottom-24 -right-24 w-48 h-48 bg-cyan-500/10 blur-3xl rounded-full"></div>
+
+            <div class="text-center mb-8 relative z-10">
+                <h1 class="text-2xl md:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400 mb-3">
+                    Công cụ tính điểm & dự đoán điểm thi
+                </h1>
+                <p class="text-slate-400 text-sm md:text-base max-w-xl mx-auto">
+                    Nhập điểm thành phần để tính kết quả học tập hoặc dự đoán điểm thi cuối kỳ cần đạt chuẩn quy chế đào tạo tín chỉ DTU.
+                </p>
+            </div>
+
+            <div class="hidden md:grid grid-cols-12 gap-4 pb-3 mb-2 border-b border-slate-700 text-xs font-semibold uppercase tracking-wider text-slate-400 px-2">
+                <div class="col-span-5">Tên Cột Điểm</div>
+                <div class="col-span-2 text-center">Trọng số (%)</div>
+                <div class="col-span-3 text-center">Điểm (0-10)</div>
+                <div class="col-span-1 text-center">Thi cuối kỳ?</div>
+                <div class="col-span-1 text-center">Xóa</div>
+            </div>
+
+            <div id="gradeRowsContainer" class="space-y-3 mb-4">
+            </div>
+
+            <div class="flex flex-col sm:flex-row justify-between items-center pt-4 border-t border-slate-700/60 gap-4">
+                <div class="text-sm font-medium">
+                    Tổng trọng số hiện tại: <span id="totalWeightDisplay" class="font-bold text-emerald-400">0%</span>
+                </div>
+                <button onclick="addNewRow()" class="w-full sm:w-auto flex items-center justify-center space-x-2 border-2 border-dashed border-slate-700 hover:border-blue-500 hover:text-blue-400 rounded-xl px-5 py-2.5 text-sm cursor-pointer transition-all duration-200">
+                    <i class="fa-solid fa-plus text-xs"></i>
+                    <span>Thêm Cột Điểm</span>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8">
+                <button onclick="handlePrediction()" class="w-full border border-blue-500/50 hover:border-blue-500 text-blue-400 hover:bg-blue-500/5 font-semibold py-3 px-6 rounded-xl transition-all duration-200 cursor-pointer text-center">
+                    Dự tính điểm thi
+                </button>
+                <button onclick="handleCalculation()" class="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-semibold py-3 px-6 rounded-xl shadow-lg shadow-blue-500/20 transition-all duration-200 cursor-pointer text-center">
+                    Tính kết quả
+                </button>
+            </div>
+
+            <div id="resultBox" class="hidden mt-8 transition-all duration-300">
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="text-center text-xs text-slate-500 w-full mt-auto pt-4">
+        &copy; 2026 - Phát triển bởi <span class="font-bold text-slate-300">Phan An IT.</span>
+    </footer>
+
+    <script>
+        let gradeRows = [
+            { id: 1, name: "Bài Tập Về Nhà", weight: 5, score: "", isFinal: false },
+            { id: 2, name: "Chuyên Cần", weight: 5, score: "", isFinal: false },
+            { id: 3, name: "Kiểm Tra Giữa Kỳ", weight: 15, score: "", isFinal: false },
+            { id: 4, name: "Phát Biểu & Thảo Luận", weight: 5, score: "", isFinal: false },
+            { id: 5, name: "Thực Hành & Thực Tế", weight: 15, score: "", isFinal: false },
+            { id: 6, name: "Kiểm Tra Cuối Kỳ", weight: 55, score: "", isFinal: true }
+        ];
+
+        function syncDOMToState() {
+            gradeRows.forEach(row => {
+                const nameEl = document.getElementById(`name-${row.id}`);
+                const weightEl = document.getElementById(`weight-${row.id}`);
+                const scoreEl = document.getElementById(`score-${row.id}`);
+                const isFinalEl = document.getElementById(`final-${row.id}`);
+
+                if (nameEl) row.name = nameEl.value;
+                if (weightEl) row.weight = parseFloat(weightEl.value) || 0;
+                if (scoreEl) row.score = scoreEl.value === "" ? "" : parseFloat(scoreEl.value);
+                if (isFinalEl) row.isFinal = isFinalEl.checked;
+            });
+        }
+
+        function handleFinalCheckboxToggle(selectedId) {
+            syncDOMToState();
+            gradeRows.forEach(row => {
+                if (row.id === selectedId) {
+                    row.isFinal = true;
+                } else {
+                    row.isFinal = false;
+                }
+            });
+            renderRows();
+        }
+
+        function renderRows() {
+            const container = document.getElementById('gradeRowsContainer');
+            container.innerHTML = '';
+
+            let totalWeight = 0;
+
+            gradeRows.forEach((row) => {
+                totalWeight += row.weight;
+                const rowHtml = `
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-4 items-center p-3 md:p-2 bg-slate-800/30 md:bg-transparent rounded-xl border border-slate-700/40 md:border-none">
+                        <div class="col-span-12 md:col-span-5">
+                            <label class="block md:hidden text-xs text-slate-400 mb-1 font-semibold">Tên Cột Điểm</label>
+                            <input type="text" id="name-${row.id}" value="${row.name}" class="w-full input-bg rounded-lg px-3 py-2 text-sm text-white" placeholder="Tên cột điểm...">
+                        </div>
+                        <div class="col-span-6 md:col-span-2">
+                            <label class="block md:hidden text-xs text-slate-400 mb-1 font-semibold">Trọng số (%)</label>
+                            <input type="number" id="weight-${row.id}" value="${row.weight}" oninput="updateTotalWeightDisplay()" class="w-full input-bg rounded-lg px-3 py-2 text-sm text-center text-white" placeholder="%">
+                        </div>
+                        <div class="col-span-6 md:col-span-3">
+                            <label class="block md:hidden text-xs text-slate-400 mb-1 font-semibold">Điểm (0-10)</label>
+                            <input type="number" step="0.01" id="score-${row.id}" value="${row.score !== "" ? row.score : ""}" class="w-full input-bg rounded-lg px-3 py-2 text-sm text-center text-white" placeholder="Điểm số">
+                        </div>
+                        <div class="col-span-6 md:col-span-1 flex flex-row md:justify-center items-center space-x-2 md:space-x-0 mt-2 md:mt-0">
+                            <span class="block md:hidden text-xs text-slate-400 font-semibold">Thi cuối kỳ?</span>
+                            <input type="checkbox" id="final-${row.id}" ${row.isFinal ? 'checked' : ''} onchange="handleFinalCheckboxToggle(${row.id})" class="w-4 h-4 rounded border-slate-700 text-blue-500 focus:ring-blue-500 bg-slate-800 cursor-pointer">
+                        </div>
+                        <div class="col-span-6 md:col-span-1 flex flex-row md:justify-center items-center space-x-2 md:space-x-0 justify-end mt-2 md:mt-0">
+                            <button onclick="removeRow(${row.id})" class="text-slate-500 hover:text-red-400 p-1 transition-colors cursor-pointer" title="Xóa hàng">
+                                <i class="fa-solid fa-xmark text-base"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', rowHtml);
+            });
+
+            updateTotalWeightDisplay();
+        }
+
+        function updateTotalWeightDisplay() {
+            let total = 0;
+            gradeRows.forEach(row => {
+                const el = document.getElementById(`weight-${row.id}`);
+                if (el) {
+                    total += parseFloat(el.value) || 0;
+                } else {
+                    total += row.weight;
+                }
+            });
+
+            const display = document.getElementById('totalWeightDisplay');
+            display.innerText = `${total}%`;
+            if (total === 100) {
+                display.className = "font-bold text-emerald-400";
+            } else {
+                display.className = "font-bold text-amber-400";
+            }
+            return total;
+        }
+
+        function addNewRow() {
+            syncDOMToState();
+            const newId = gradeRows.length > 0 ? Math.max(...gradeRows.map(r => r.id)) + 1 : 1;
+            gradeRows.push({
+                id: newId,
+                name: "Cột Điểm Mới",
+                weight: 0,
+                score: "",
+                isFinal: false
+            });
+            renderRows();
+        }
+
+        function removeRow(id) {
+            syncDOMToState();
+            gradeRows = gradeRows.filter(row => row.id !== id);
+            renderRows();
+        }
+
+
+        function getDtuGradeDetails(totalScore, finalScore) {
+
+    // Điều kiện rớt môn
+        if (totalScore < 4.0 || finalScore < 3.0) {
+            return {
+                grade: 'F',
+                gpa: '0.00',
+                status: 'Nợ môn',
+                badgeBg: 'bg-red-950/80 text-red-400 border border-red-900',
+                label: 'Kém',
+                warnText: 'Cảnh báo: Nợ môn.'
+            };
+        }
+
+        // ===== QUY ĐỔI ĐIỂM DTU =====
+
+        // A
+        if (totalScore >= 8.5) {
+            return {
+                grade: 'A',
+                gpa: '4.00',
+                status: 'Qua môn 🎉',
+                badgeBg: 'bg-emerald-950/80 text-emerald-400 border border-emerald-900',
+                label: 'Giỏi / Xuất sắc',
+                warnText: ''
+            };
+        }
+
+        // B
+        if (totalScore >= 7.0) {
+            return {
+                grade: 'B',
+                gpa: '3.00',
+                status: 'Qua môn 🎉',
+                badgeBg: 'bg-blue-950/80 text-blue-400 border border-blue-900',
+                label: 'Khá',
+                warnText: ''
+            };
+        }
+
+        // C
+        if (totalScore >= 5.5) {
+            return {
+                grade: 'C',
+                gpa: '2.00',
+                status: 'Qua môn 🎉',
+                badgeBg: 'bg-yellow-950/80 text-yellow-400 border border-yellow-900',
+                label: 'Trung bình',
+                warnText: ''
+            };
+        }
+
+        // ===== C- =====
+        // 4.5 -> dưới 5.5
+        if (totalScore >= 4.5) {
+            return {
+                grade: 'C-',
+                gpa: '1.65',
+                status: 'Qua môn 🎉',
+                badgeBg: 'bg-amber-950/80 text-amber-400 border border-amber-900',
+                label: 'Trung bình yếu',
+                warnText: ''
+            };
+        }
+
+        // D
+        return {
+            grade: 'D',
+            gpa: '1.00',
+            status: 'Qua môn 🎉',
+            badgeBg: 'bg-orange-950/80 text-orange-400 border border-orange-900',
+            label: 'Yếu',
+            warnText: ''
+        };
+    }
+
+        function handleCalculation() {
+            syncDOMToState();
+            const totalWeight = updateTotalWeightDisplay();
+            const resultBox = document.getElementById('resultBox');
+
+            if (totalWeight !== 100) {
+                alert(`Tổng trọng số hiện tại là ${totalWeight}%. Vui lòng điều chỉnh các cột điểm sao cho tổng trọng số bằng đúng 100% để tính toán.`);
+                return;
+            }
+
+            let weightedSum = 0;
+            let missingScores = false;
+            let finalExamScore = 0;
+
+            gradeRows.forEach(row => {
+                if (row.score === "") missingScores = true;
+                weightedSum += (row.score * (row.weight / 100));
+                if (row.isFinal) {
+                    finalExamScore = row.score;
+                }
+            });
+
+            if (missingScores) {
+                alert("Vui lòng điền đầy đủ tất cả các đầu điểm thành phần để tính kết quả tổng kết học phần.");
+                return;
+            }
+
+            const finalTotal = Math.round(weightedSum * 100) / 100;
+            const evalResult = getDtuGradeDetails(finalTotal, finalExamScore);
+
+            resultBox.className = "mt-8 block";
+            resultBox.innerHTML = `
+                <div class="text-center mb-4">
+                    <h3 class="text-xl font-bold text-white tracking-wide">Kết quả Học tập</h3>
+                </div>
+                <div class="bg-[#18223f] rounded-xl p-5 border border-slate-700/50 max-w-xl mx-auto space-y-4 shadow-xl">
+                    <div class="flex justify-between items-center text-sm py-1 border-b border-slate-700/30">
+                        <span class="text-slate-400">Tổng trọng số:</span>
+                        <span class="font-medium text-white">100%</span>
+                    </div>
+                    <div class="flex justify-between items-center text-sm py-1 border-b border-slate-700/30">
+                        <span class="text-slate-400">Điểm tổng kết (hệ 10):</span>
+                        <span class="font-bold text-blue-400 text-lg">${finalTotal.toFixed(2)}</span>
+                    </div>
+                    <div class="flex justify-between items-center text-sm py-1 border-b border-slate-700/30">
+                        <span class="text-slate-400">Điểm hệ 4:</span>
+                        <span class="font-semibold text-white">${evalResult.gpa}</span>
+                    </div>
+                    <div class="flex justify-between items-center text-sm py-1 border-b border-slate-700/30">
+                        <span class="text-slate-400">Điểm chữ:</span>
+                        <span class="font-bold text-white text-base">${evalResult.grade}</span>
+                    </div>
+                    <div class="flex justify-between items-center text-sm py-1 border-b border-slate-700/30">
+                        <span class="text-slate-400">Xếp loại:</span>
+                        <span class="font-semibold text-white">${evalResult.label}</span>
+                    </div>
+                    <div class="flex justify-between items-center text-sm pt-1">
+                        <span class="text-slate-400">Trạng thái:</span>
+                        <span class="px-4 py-1 rounded-full text-xs font-bold ${evalResult.badgeBg}">${evalResult.status}</span>
+                    </div>
+                </div>
+                ${evalResult.warnText ? `<div class="text-center text-xs text-red-500 font-semibold mt-4 tracking-wide">${evalResult.warnText}</div>` : ''}
+            `;
+        }
+
+        function handlePrediction() {
+            syncDOMToState();
+            const totalWeight = updateTotalWeightDisplay();
+            const resultBox = document.getElementById('resultBox');
+
+            if (totalWeight !== 100) {
+                alert(`Tổng trọng số hiện tại là ${totalWeight}%. Vui lòng điều chỉnh tổng trọng số về 100% trước khi dự đoán.`);
+                return;
+            }
+
+            const finalRow = gradeRows.find(row => row.isFinal);
+            if (!finalRow) {
+                alert("Vui lòng đánh dấu chọn vào ô 'Thi cuối kỳ?' ở danh sách trên để bot biết cần dự đoán cho cột nào!");
+                return;
+            }
+
+            let nonFinalWeightedSum = 0;
+            let partialMissing = false;
+
+            gradeRows.forEach(row => {
+                if (!row.isFinal) {
+                    if (row.score === "") partialMissing = true;
+                    nonFinalWeightedSum += (row.score * (row.weight / 100));
+                }
+            });
+
+            if (partialMissing) {
+                alert("Vui lòng điền đầy đủ điểm của tất cả các cột thành phần khác, chỉ chừa trống duy nhất cột điểm thi cuối kỳ.");
+                return;
+            }
+
+            const finalWeightFactor = finalRow.weight / 100;
+
+            function calculateScoreNeeded(targetTotal) {
+                let needed = (targetTotal - nonFinalWeightedSum) / finalWeightFactor;
+                needed = Math.ceil(needed * 100) / 100;
+                return needed;
+            }
+
+            let scoreForD = calculateScoreNeeded(4.0);
+            if (scoreForD < 3.0) scoreForD = 3.0; // Đạt tối thiểu điểm liệt DTU
+
+            const scoreForC = calculateScoreNeeded(5.5);
+            const scoreForB = calculateScoreNeeded(7.0);
+            const scoreForA = calculateScoreNeeded(8.5);
+            const scoreForAPlus = calculateScoreNeeded(9.5);
+
+            function displayFormatNew(score, successColorClass) {
+                if (score > 10) return `<span class="text-slate-500 font-medium">Không thể đạt</span>`;
+                if (score <= 0) return `<span class="text-emerald-400 font-medium">0.00 điểm</span>`;
+                return `<span class="${successColorClass} font-bold">${score.toFixed(2)} điểm</span>`;
+            }
+
+            resultBox.className = "mt-8 block";
+            resultBox.innerHTML = `
+                <div class="bg-[#18223f]/60 rounded-xl p-5 border-l-4 border-yellow-500 max-w-xl mx-auto space-y-3.5 shadow-xl">
+                    <div class="flex items-center text-yellow-500 font-bold text-sm">
+                        <i class="fa-solid fa-circle-info mr-2"></i>
+                        <span>Dự đoán điểm thi cuối kỳ</span>
+                    </div>
+                    
+                    <div class="text-xs text-slate-400">
+                        Điểm thành phần: <strong class="text-slate-200 font-bold">${nonFinalWeightedSum.toFixed(2)}</strong>. Điểm cuối kỳ (${finalRow.weight}%) cần:
+                    </div>
+
+                    <div class="space-y-2.5 pt-1">
+                        <div class="flex justify-between items-center text-sm pb-2 border-b border-slate-700/40">
+                            <span class="text-slate-300">Để đạt D (4.0) - Qua môn:</span>
+                            <span>${displayFormatNew(scoreForD, 'text-blue-400')}</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm pb-2 border-b border-slate-700/40">
+                            <span class="text-slate-300">Để đạt C (5.5):</span>
+                            <span>${displayFormatNew(scoreForC, 'text-orange-400')}</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm pb-2 border-b border-slate-700/40">
+                            <span class="text-slate-300">Để đạt B (7.0):</span>
+                            <span>${displayFormatNew(scoreForB, 'text-slate-400')}</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm pb-2 border-b border-slate-700/40">
+                            <span class="text-slate-300">Để đạt A (8.5):</span>
+                            <span>${displayFormatNew(scoreForA, 'text-slate-400')}</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm pb-1">
+                            <span class="text-slate-300">Để đạt A+ (9.5):</span>
+                            <span>${displayFormatNew(scoreForAPlus, 'text-slate-400')}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        window.onload = function() {
+            renderRows();
+        };
+    </script>
+</body>
+</html>
